@@ -14,7 +14,7 @@ jobs:
       - name: Prep work
         id: prep_work
         run: |
-          ./prepare-toolchain 4.2 /Applications/Xcode_13.2.1.app
+          ./prepare-toolchain 4.2 /Applications/Xcode.app
 
       - name: theos-build
         uses: L1ghtmann/theos-build@main

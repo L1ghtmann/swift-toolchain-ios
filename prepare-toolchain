@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 set -e
 shopt -s extglob
 cd "$(dirname "$0")"
 
-if [[ $# -ne 2 ]]; then 
+if [[ $# -ne 2 ]]; then
 	echo "Usage: $0 <version> <path to correct Xcode.app>"
 	exit 1
 fi
@@ -19,15 +20,15 @@ package="${file_name}-package.pkg"
 mkdir -p toolchains
 cd toolchains
 info "Downloading macOS toolchain"
-if [[ ! -f "toolchain-${version}.pkg" ]]; then
-	curl -#o "toolchain-${version}.pkg" "https://swift.org/builds/swift-${version}-release/xcode/swift-${version}-RELEASE/${file_name}.pkg"
+if ! [[ -f "toolchain-${version}.pkg" ]]; then
+	curl -Lo "toolchain-${version}.pkg" "https://swift.org/builds/swift-${version}-release/xcode/swift-${version}-RELEASE/${file_name}.pkg"
 fi
 
 info "Unpacking toolchain"
 # remove any pre-existing usr dir first
 rm -rf usr
-xar -xf "toolchain-${version}.pkg" "${package}/Payload"
-tar -xzf "${package}/Payload" "usr"
+xar -xvf "toolchain-${version}.pkg" "${package}/Payload"
+tar -xzvf "${package}/Payload" "usr"
 rm -rf "${package}"
 
 info "Modifying macOS toolchain"
@@ -38,7 +39,7 @@ for file in libswift*.dylib; do
 	# symlink to the libswift package
 	ln -fs "/usr/lib/libswift/${version}/${file}" "${file}"
 done
-cd ../../../..
+cd
 
 info "Installing dependencies"
 type brew &>/dev/null || ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
@@ -53,43 +54,43 @@ fi
 
 mkdir swift-source
 cd swift-source
-git clone https://github.com/apple/swift.git
+git clone --depth=1 https://github.com/apple/swift.git
 swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE"
 
 # patch clang
-sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' clang/lib/DirectoryWatcher/DirectoryWatcher.cpp
+sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/DirectoryWatcher.cpp
 
 # compile swift
 info "Compiling Swift"
 swift/utils/build-script \
---build-subdir=LLVMClangSwift_iphoneos \
---release \
--- \
---install-swift \
---install-destdir=output \
---swift-install-components="compiler;clang-builtin-headers;editor-integration;tools;sourcekit-xpc-service;swift-remote-mirror;swift-remote-mirror-headers;" \
---install-prefix=/usr \
---cross-compile-hosts=iphoneos-arm64 \
---compiler-vendor=apple \
---swift-primary-variant-sdk=IOS \
---swift-primary-variant-arch=arm64 \
---build-toolchain-only=1 \
---build-swift-static-stdlib=0 \
---build-swift-dynamic-stdlib=0 \
---build-swift-static-sdk-overlay=0 \
---build-swift-dynamic-sdk-overlay=0 \
---build-runtime-with-host-compiler=0 \
---skip-local-host-install \
---skip-build-benchmarks \
---skip-test-sourcekit \
---skip-test-swift \
---llvm-include-tests=0 \
---llvm-enable-modules=0 \
---build-swift-examples=0 \
---swift-include-tests=0 \
---darwin-deployment-version-ios=10.0 \
---darwin-crash-reporter-client=1 \
---reconfigure
+	--build-subdir=LLVMClangSwift_iphoneos \
+	--release \
+	-- \
+	--install-swift \
+	--install-destdir=output \
+	--swift-install-components="compiler;clang-builtin-headers;editor-integration;tools;sourcekit-xpc-service;swift-remote-mirror;swift-remote-mirror-headers;" \
+	--install-prefix=/usr \
+	--cross-compile-hosts=iphoneos-arm64 \
+	--compiler-vendor=apple \
+	--swift-primary-variant-sdk=IOS \
+	--swift-primary-variant-arch=arm64 \
+	--build-toolchain-only=1 \
+	--build-swift-static-stdlib=0 \
+	--build-swift-dynamic-stdlib=0 \
+	--build-swift-static-sdk-overlay=0 \
+	--build-swift-dynamic-sdk-overlay=0 \
+	--build-runtime-with-host-compiler=0 \
+	--skip-local-host-install \
+	--skip-build-benchmarks \
+	--skip-test-sourcekit \
+	--skip-test-swift \
+	--llvm-include-tests=0 \
+	--llvm-enable-modules=0 \
+	--build-swift-examples=0 \
+	--swift-include-tests=0 \
+	--darwin-deployment-version-ios=10.0 \
+	--darwin-crash-reporter-client=1 \
+	--reconfigure
 cd ..
 
 info "Merging toolchains"
