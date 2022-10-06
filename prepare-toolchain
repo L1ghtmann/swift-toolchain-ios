@@ -9,7 +9,7 @@ if [[ $# -ne 2 ]]; then
 	exit 1
 fi
 
-export DEVELOPER_DIR="$2/Contents/Developer/"
+export DEVELOPER_DIR="$2/Contents/Developer/" #unused?
 
 info() { echo "[info] $1"; }
 
@@ -42,8 +42,9 @@ done
 cd
 
 info "Installing dependencies"
-type brew &>/dev/null || ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+type brew &>/dev/null || bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 type cmake &>/dev/null || brew install cmake
+type ldid &>/dev/null || brew install ldid
 type ninja &>/dev/null || brew install ninja
 
 info "Checking out Swift repo"
@@ -58,10 +59,11 @@ git clone --depth=1 https://github.com/apple/swift.git
 swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE"
 
 # patch clang
-sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/DirectoryWatcher.cpp
+sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
 
 # compile swift
 info "Compiling Swift"
+export SKIP_XCODE_VERSION_CHECK=1
 swift/utils/build-script \
 	--build-subdir=LLVMClangSwift_iphoneos \
 	--release \
@@ -74,6 +76,7 @@ swift/utils/build-script \
 	--compiler-vendor=apple \
 	--swift-primary-variant-sdk=IOS \
 	--swift-primary-variant-arch=arm64 \
+	--build-args=-j$(sysctl -n hw.ncpu)
 	--build-toolchain-only=1 \
 	--build-swift-static-stdlib=0 \
 	--build-swift-dynamic-stdlib=0 \
@@ -100,7 +103,7 @@ cd usr/
 # Codesign any Mach-O files, also adding the correct entitlements
 find . \( -type f \( -name '*.dylib' -or \( -path './bin/*' -not -name '*.py' \) \) -or \( -path '*.framework/*' -not -name '*.*' \) -not -name '.DS_Store' \) -print0 | xargs -0 -I{} sh -c "ldid -S../../ent.xml {} || :"
 
-function copy_file() {
+copy_file() {
 	mkdir -p share/swift_stash/"$(dirname "$1")"
 	mv "$1" share/swift_stash/"$(dirname "$1")"
 	ln -fs /usr/share/swift_stash/"$1" "$1"
