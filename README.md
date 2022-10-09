@@ -6,7 +6,7 @@ Swift toolchain for iOS
 
 1. Install any requirements listed in `https://github.com/apple/swift/blob/swift-<version>-RELEASE/README.md#macos`
 2. Clone this repository somewhere on your computer
-3. Run `./prepare-toolchain <version> <path to required Xcode.app>`
+3. Run `./prepare-toolchain <version>
 
 ### Packaging as a .deb
 

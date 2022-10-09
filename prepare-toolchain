@@ -4,14 +4,12 @@ set -e
 shopt -s extglob
 cd "$(dirname "$0")"
 
-if [[ $# -ne 2 ]]; then
-	echo "Usage: $0 <version> <path to correct Xcode.app>"
+if [[ $# -ne 1 ]]; then
+	echo "Usage: $0 <version>"
 	exit 1
 fi
 
 info() { echo "[info] $1"; }
-
-export DEVELOPER_DIR="$2/Contents/Developer/"
 
 version="$1"
 file_name="swift-${version}-RELEASE-osx"
@@ -42,10 +40,38 @@ done
 cd
 
 info "Installing dependencies"
-type brew &>/dev/null || bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-type cmake &>/dev/null || brew install cmake
-type ldid &>/dev/null || brew install ldid
-type ninja &>/dev/null || brew install ninja
+sudo apt update && sudo apt install -y \
+	build-essential       \
+	clang                 \
+	cmake                 \
+	git                   \
+	icu-devtools          \
+	libcurl4-openssl-dev  \
+	libedit-dev           \
+	libicu-dev            \
+	libncurses5-dev       \
+	libplist-dev 		  \
+	libpython3-dev        \
+	libsqlite3-dev        \
+	libxml2-dev           \
+	ninja-build           \
+	pkg-config            \
+	python2               \
+	python-six            \
+	python2-dev           \
+	python3-six           \
+	python3-distutils     \
+	rsync                 \
+	swig                  \
+	systemtap-sdt-dev     \
+	tzdata                \
+	unzip                 \
+	uuid-dev
+
+git clone https://github.com/procursusteam/ldid
+cd ldid
+make -j$(nproc --all) install
+cd
 
 info "Checking out Swift repo"
 
@@ -63,7 +89,6 @@ sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEv
 
 # compile swift
 info "Compiling Swift"
-export SKIP_XCODE_VERSION_CHECK=1
 swift/utils/build-script \
 	--build-subdir=LLVMClangSwift_iphoneos \
 	--release \
@@ -76,7 +101,7 @@ swift/utils/build-script \
 	--compiler-vendor=apple \
 	--swift-primary-variant-sdk=IOS \
 	--swift-primary-variant-arch=arm64 \
-	--build-args=-j$(sysctl -n hw.ncpu)
+	--build-args=-j$(nproc --all)
 	--build-toolchain-only=1 \
 	--build-swift-static-stdlib=0 \
 	--build-swift-dynamic-stdlib=0 \
