@@ -8,13 +8,14 @@ on:
 
 jobs:
   build:
-    runs-on: macos-12
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@main
       - name: Prep work
         id: prep_work
         run: |
-          ./prepare-toolchain 5.7 /Applications/Xcode_14.0.1.app
+          pip install --user six
+          ./prepare-toolchain 5.5 /Applications/Xcode_13.0.app
 
       - name: theos-build
         uses: L1ghtmann/theos-build@main

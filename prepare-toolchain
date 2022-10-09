@@ -9,9 +9,9 @@ if [[ $# -ne 2 ]]; then
 	exit 1
 fi
 
-export DEVELOPER_DIR="$2/Contents/Developer/" #unused?
-
 info() { echo "[info] $1"; }
+
+export DEVELOPER_DIR="$2/Contents/Developer/"
 
 version="$1"
 file_name="swift-${version}-RELEASE-osx"
