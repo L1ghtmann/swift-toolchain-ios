@@ -64,36 +64,40 @@ sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEv
 # compile swift
 info "Compiling Swift"
 export SKIP_XCODE_VERSION_CHECK=1
+# --darwin-deployment-version-ios=10.0 isn't being read by llvm for some reason and it's defaulting to ios 7
+# threading support wasn't added until ios 9, so obv llvm is failing to build w/ threading enabled by default
+# going to hackily patch the default ios 7 and hope this changes something? (Leptos >>)
+sed -i '' 's@7.0@10.0@' swift/utils/build-script-impl
 swift/utils/build-script \
-	--build-subdir=LLVMClangSwift_iphoneos \
-	--release \
-	-- \
-	--install-swift \
-	--install-destdir=output \
-	--swift-install-components="compiler;clang-builtin-headers;editor-integration;tools;sourcekit-xpc-service;swift-remote-mirror;swift-remote-mirror-headers;" \
-	--install-prefix=/usr \
-	--cross-compile-hosts=iphoneos-arm64 \
-	--compiler-vendor=apple \
-	--swift-primary-variant-sdk=IOS \
-	--swift-primary-variant-arch=arm64 \
-	--build-args=-j$(sysctl -n hw.ncpu)
-	--build-toolchain-only=1 \
-	--build-swift-static-stdlib=0 \
-	--build-swift-dynamic-stdlib=0 \
-	--build-swift-static-sdk-overlay=0 \
-	--build-swift-dynamic-sdk-overlay=0 \
-	--build-runtime-with-host-compiler=0 \
-	--skip-local-host-install \
-	--skip-build-benchmarks \
-	--skip-test-sourcekit \
-	--skip-test-swift \
-	--llvm-include-tests=0 \
-	--llvm-enable-modules=0 \
-	--build-swift-examples=0 \
-	--swift-include-tests=0 \
-	--darwin-deployment-version-ios=10.0 \
-	--darwin-crash-reporter-client=1 \
-	--reconfigure
+--build-subdir=LLVMClangSwift_iphoneos \
+--release \
+-- \
+--install-swift \
+--install-destdir=output \
+--swift-install-components="compiler;clang-builtin-headers;editor-integration;tools;sourcekit-xpc-service;swift-remote-mirror;swift-remote-mirror-headers;" \
+--install-prefix=/usr \
+--cross-compile-hosts=iphoneos-arm64 \
+--compiler-vendor=apple \
+--swift-primary-variant-sdk=IOS \
+--swift-primary-variant-arch=arm64 \
+--build-args=-j$(sysctl -n hw.ncpu)
+--build-toolchain-only=1 \
+--build-swift-static-stdlib=0 \
+--build-swift-dynamic-stdlib=0 \
+--build-swift-static-sdk-overlay=0 \
+--build-swift-dynamic-sdk-overlay=0 \
+--build-runtime-with-host-compiler=0 \
+--skip-local-host-install \
+--skip-build-benchmarks \
+--skip-test-sourcekit \
+--skip-test-swift \
+--llvm-include-tests=0 \
+--llvm-enable-modules=0 \
+--build-swift-examples=0 \
+--swift-include-tests=0 \
+--darwin-deployment-version-ios=10.0 \
+--darwin-crash-reporter-client=1 \
+--reconfigure
 cd ..
 
 info "Merging toolchains"
