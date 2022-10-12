@@ -67,7 +67,7 @@ export SKIP_XCODE_VERSION_CHECK=1
 # --darwin-deployment-version-ios=10.0 isn't being read by llvm for some reason and it's defaulting to ios 7
 # threading support wasn't added until ios 9, so obv llvm is failing to build w/ threading enabled by default
 # going to hackily patch the default ios 7 and hope this changes something? (Leptos >>)
-# sed -i '' 's@7.0@10.0@' swift/utils/build-script-impl
+sed -i '' 's@7.0@10.0@' swift/utils/build-script-impl
 swift/utils/build-script \
 --build-subdir=LLVMClangSwift_iphoneos \
 --release \
@@ -76,11 +76,14 @@ swift/utils/build-script \
 --install-destdir=output \
 --swift-install-components="compiler;clang-builtin-headers;editor-integration;tools;sourcekit-xpc-service;swift-remote-mirror;swift-remote-mirror-headers;" \
 --install-prefix=/usr \
+--cmake-generator=Ninja \
 --cross-compile-hosts=iphoneos-arm64 \
 --compiler-vendor=apple \
 --swift-primary-variant-sdk=IOS \
 --swift-primary-variant-arch=arm64 \
---build-args=-j$(sysctl -n hw.ncpu)
+--build-args="-j$(sysctl -n hw.ncpu)"
+--llvm-num-parallel-lto-link-jobs=$(sysctl -n hw.ncpu)
+--swift-tools-num-parallel-lto-link-jobs=$(sysctl -n hw.ncpu)
 --build-toolchain-only=1 \
 --build-swift-static-stdlib=0 \
 --build-swift-dynamic-stdlib=0 \
@@ -90,8 +93,10 @@ swift/utils/build-script \
 --skip-local-build \
 --skip-local-host-install \
 --skip-build-benchmarks \
+--skip-build-android \
 --skip-test-sourcekit \
 --skip-test-swift \
+--llvm-ninja-targets-for-cross-compile-hosts="X86;ARM;AArch64" \
 --llvm-include-tests=0 \
 --llvm-enable-modules=0 \
 --build-swift-examples=0 \
