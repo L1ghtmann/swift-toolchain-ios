@@ -19,14 +19,14 @@ mkdir -p toolchains
 cd toolchains
 info "Downloading macOS toolchain"
 if ! [[ -f "toolchain-${version}.pkg" ]]; then
-	curl -Lo "toolchain-${version}.pkg" "https://swift.org/builds/swift-${version}-release/xcode/swift-${version}-RELEASE/${file_name}.pkg"
+	curl -Lo "toolchain-${version}.pkg" "https://download.swift.org/swift-${version}-release/xcode/swift-${version}-RELEASE/${file_name}.pkg"
 fi
 
 info "Unpacking toolchain"
 # remove any pre-existing usr dir first
 rm -rf usr
 xar -xvf "toolchain-${version}.pkg" "${package}/Payload"
-tar -xzvf "${package}/Payload" "usr"
+bsdtar -xzvf "${package}/Payload" "usr"
 rm -rf "${package}"
 
 info "Modifying macOS toolchain"
@@ -68,9 +68,14 @@ sudo apt update && sudo apt install -y \
 	unzip                 \
 	uuid-dev
 
+cd /usr/lib/x86_64-linux-gnu/pkgconfig/
+# idk why this isn't 2.0 for the runner, but whatever
+sudo ln -s libplist.pc libplist-2.0.pc
+cd
+
 git clone https://github.com/procursusteam/ldid
 cd ldid
-make -j$(nproc --all) install
+sudo make -j$(nproc --all) install
 cd
 
 info "Checking out Swift repo"
@@ -85,10 +90,15 @@ git clone --depth=1 https://github.com/apple/swift.git
 swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE"
 
 # patch clang
-sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
+sed -ie 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
 
 # compile swift
 info "Compiling Swift"
+# --darwin-deployment-version-ios=10.0 isn't being read by llvm for some reason and it's defaulting to ios 7
+# threading support wasn't added until ios 9, so obv llvm is failing to build w/ threading enabled by default
+# going to hackily patch the default ios 7 and hope this changes something? (Leptos >>)
+# sed -i 's@7.0@10.0@' swift/utils/build-script-impl
+
 swift/utils/build-script \
 	--build-subdir=LLVMClangSwift_iphoneos \
 	--release \
@@ -102,6 +112,13 @@ swift/utils/build-script \
 	--swift-primary-variant-sdk=IOS \
 	--swift-primary-variant-arch=arm64 \
 	--build-args=-j$(nproc --all)
+	--swift-tools-num-parallel-lto-link-jobs=$(nproc --all)
+	--skip-build-osx \
+	--skip-test-osx \
+	--skip-build-tvos \
+	--skip-test-tvos \
+	--skip-build-watchos \
+	--skip-test-watchos \
 	--build-toolchain-only=1 \
 	--build-swift-static-stdlib=0 \
 	--build-swift-dynamic-stdlib=0 \

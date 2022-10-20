@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
-      - name: Prep work
-        id: prep_work
+      - name: The work
+        id: the_work
         run: |
           git clone https://github.com/mackyle/xar
           pushd xar/xar/
@@ -21,6 +21,7 @@ jobs:
           make -j$(nproc --all)
           sudo make -j$(nproc --all) install
           popd
+          sudo apt install -y libarchive-tools
           ./prepare-toolchain 5.7
 
       - name: Build package
