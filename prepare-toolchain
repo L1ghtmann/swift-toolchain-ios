@@ -64,11 +64,6 @@ sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEv
 # compile swift
 info "Compiling Swift"
 export SKIP_XCODE_VERSION_CHECK=1
-# --darwin-deployment-version-ios=10.0 isn't being read by llvm for some reason and it's defaulting to ios 7
-# threading support wasn't added until ios 9, so obv llvm is failing to build w/ threading enabled by default
-# going to hackily patch the default ios 7 and hope this changes something? (Leptos >>)
-sed -i '' 's@7.0@10.0@' swift/utils/build_swift/build_swift/defaults.py swift/utils/build-script-impl
-# i may have been dumb and forgot to place "\" after my added args below ... the min 10.0 ver may work and i may just be dumb af
 swift/utils/build-script \
 --build-subdir=LLVMClangSwift_iphoneos \
 --release \
@@ -91,7 +86,6 @@ swift/utils/build-script \
 --build-swift-static-sdk-overlay=0 \
 --build-swift-dynamic-sdk-overlay=0 \
 --build-runtime-with-host-compiler=0 \
---build-llvm=0 \
 --skip-local-build \
 --skip-local-host-install \
 --skip-build-benchmarks \
@@ -106,6 +100,9 @@ swift/utils/build-script \
 --skip-test-watchos \
 --build-swift-examples=0 \
 --swift-include-tests=0 \
+--llvm-ninja-targets="llvm-tblgen clang-tblgen" \
+--llvm-include-tests=0 \
+--llvm-enable-modules=0 \
 --darwin-deployment-version-ios=10.0 \
 --darwin-crash-reporter-client=1 \
 --reconfigure
