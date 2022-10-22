@@ -87,12 +87,12 @@ swift/utils/build-script \
 --build-swift-dynamic-stdlib=0 \
 --build-swift-static-sdk-overlay=0 \
 --build-swift-dynamic-sdk-overlay=0 \
---build-runtime-with-host-compiler=1 \
---skip-local-build \
+--build-runtime-with-host-compiler=0 \
+--llvm-ninja-targets="llvm-tblgen libLLVMBitstreamReader.a libLLVMMCJIT.a clang" \
 --skip-local-host-install \
 --skip-build-benchmarks \
---skip-build-android \
 --skip-build-clang-tools-extra \
+--skip-build-android \
 --skip-test-sourcekit \
 --skip-test-swift \
 --skip-build-osx \
