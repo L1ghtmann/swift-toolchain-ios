@@ -9,9 +9,10 @@ if [[ $# -ne 2 ]]; then
 	exit 1
 fi
 
-info() { echo "[info] $1"; }
+export DEVELOPER_DIR="$2/Contents/Developer"
+export SKIP_XCODE_VERSION_CHECK=1
 
-export DEVELOPER_DIR="$2/Contents/Developer/"
+info() { echo "[info] $1"; }
 
 version="$1"
 file_name="swift-${version}-RELEASE-osx"
@@ -44,6 +45,7 @@ cd
 info "Installing dependencies"
 type brew &>/dev/null || bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 type cmake &>/dev/null || brew install cmake
+type cmark &>/dev/null || brew install cmark
 type ldid &>/dev/null || brew install ldid
 type ninja &>/dev/null || brew install ninja
 
@@ -63,7 +65,6 @@ sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEv
 
 # compile swift
 info "Compiling Swift"
-export SKIP_XCODE_VERSION_CHECK=1
 swift/utils/build-script \
 --build-subdir=LLVMClangSwift_iphoneos \
 --release \
@@ -75,6 +76,7 @@ swift/utils/build-script \
 --cmake-generator=Ninja \
 --extra-cmake-options="-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
 --cross-compile-hosts=iphoneos-arm64 \
+--cross-compile-with-host-tools=0 \
 --compiler-vendor=apple \
 --swift-primary-variant-sdk=IOS \
 --swift-primary-variant-arch=arm64 \
@@ -85,10 +87,12 @@ swift/utils/build-script \
 --build-swift-dynamic-stdlib=0 \
 --build-swift-static-sdk-overlay=0 \
 --build-swift-dynamic-sdk-overlay=0 \
---build-runtime-with-host-compiler=0 \
+--build-runtime-with-host-compiler=1 \
+--skip-local-build \
 --skip-local-host-install \
 --skip-build-benchmarks \
 --skip-build-android \
+--skip-build-clang-tools-extra \
 --skip-test-sourcekit \
 --skip-test-swift \
 --skip-build-osx \
@@ -98,6 +102,7 @@ swift/utils/build-script \
 --skip-build-watchos \
 --skip-test-watchos \
 --build-swift-examples=0 \
+--build-swift-tools=0 \
 --swift-include-tests=0 \
 --llvm-include-tests=0 \
 --llvm-enable-modules=0 \
