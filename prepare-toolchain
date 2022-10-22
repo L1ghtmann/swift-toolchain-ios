@@ -99,14 +99,12 @@ swift/utils/build-script \
 --skip-test-watchos \
 --build-swift-examples=0 \
 --swift-include-tests=0 \
---llvm-ninja-targets="llvm-tblgen libLLVMBitstreamReader.a clang-tblgen" \
 --llvm-include-tests=0 \
 --llvm-enable-modules=0 \
 --darwin-deployment-version-ios=10.0 \
 --darwin-crash-reporter-client=1 \
 --reconfigure
 cd ..
-# --skip-local-build \
 
 info "Merging toolchains"
 cp -a "swift-source/output/merged-hosts/usr/bin" usr/
