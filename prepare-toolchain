@@ -9,7 +9,7 @@ if [[ $# -ne 2 ]]; then
 	exit 1
 fi
 
-export DEVELOPER_DIR="$2/Contents/Developer"
+export DEVELOPER_DIR="$2/Contents/Developer/"
 export SKIP_XCODE_VERSION_CHECK=1
 
 info() { echo "[info] $1"; }
@@ -40,17 +40,15 @@ for file in libswift*.dylib; do
 	# symlink to the libswift package
 	ln -fs "/usr/lib/libswift/${version}/${file}" "${file}"
 done
-cd
+cd ../../../../
 
 info "Installing dependencies"
 type brew &>/dev/null || bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 type cmake &>/dev/null || brew install cmake
-type cmark &>/dev/null || brew install cmark
 type ldid &>/dev/null || brew install ldid
 type ninja &>/dev/null || brew install ninja
 
 info "Checking out Swift repo"
-
 if [[ -d swift-source ]]; then
 	rm -rf swift-source
 fi
@@ -63,53 +61,59 @@ swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE" -j "$(sysct
 # patch clang
 sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
 
+# for use with workflow
+if [[ -d $HOME/llvm-macosx-x86_64 ]]; then
+	info "Installing pre-compiled host toolchain"
+	mkdir -p build/LLVMClangSwift_iphoneos/
+	mv -v $HOME/llvm-macosx-x86_64 build/LLVMClangSwift_iphoneos/
+fi
+
 # compile swift
 info "Compiling Swift"
 swift/utils/build-script \
---build-subdir=LLVMClangSwift_iphoneos \
---release \
--- \
---install-swift \
---install-destdir=output \
---swift-install-components="compiler;clang-builtin-headers;editor-integration;tools;sourcekit-xpc-service;swift-remote-mirror;swift-remote-mirror-headers;" \
---install-prefix=/usr \
---cmake-generator=Ninja \
---extra-cmake-options="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
---cross-compile-hosts=iphoneos-arm64 \
---cross-compile-with-host-tools=0 \
---compiler-vendor=apple \
---swift-primary-variant-sdk=IOS \
---swift-primary-variant-arch=arm64 \
---build-args="-j$(sysctl -n hw.ncpu)" \
---swift-tools-num-parallel-lto-link-jobs="$(sysctl -n hw.ncpu)" \
---llvm-ninja-targets-for-cross-compile-hosts="clang" \
---build-toolchain-only=1 \
---build-swift-static-stdlib=0 \
---build-swift-dynamic-stdlib=0 \
---build-swift-static-sdk-overlay=0 \
---build-swift-dynamic-sdk-overlay=0 \
---build-runtime-with-host-compiler=1 \
---skip-local-build \
---skip-local-host-install \
---skip-build-benchmarks \
---skip-build-clang-tools-extra \
---skip-build-android \
---skip-test-sourcekit \
---skip-test-swift \
---skip-build-osx \
---skip-test-osx \
---skip-build-tvos \
---skip-test-tvos \
---skip-build-watchos \
---skip-test-watchos \
---build-swift-examples=0 \
---swift-include-tests=0 \
---llvm-include-tests=0 \
---llvm-enable-modules=0 \
---darwin-deployment-version-ios=10.0 \
---darwin-crash-reporter-client=1 \
---reconfigure
-cd ..
+	--build-subdir=LLVMClangSwift_iphoneos \
+	--release \
+	-- \
+	--install-swift \
+	--install-destdir=output \
+	--swift-install-components="compiler;clang-builtin-headers;editor-integration;tools;sourcekit-xpc-service;swift-remote-mirror;swift-remote-mirror-headers;" \
+	--install-prefix=/usr \
+	--cmake-generator=Ninja \
+	--extra-cmake-options="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
+	--cross-compile-hosts=iphoneos-arm64 \
+	--compiler-vendor=apple \
+	--swift-primary-variant-sdk=IOS \
+	--swift-primary-variant-arch=arm64 \
+	--build-args="-j$(sysctl -n hw.ncpu)" \
+	--swift-tools-num-parallel-lto-link-jobs="$(sysctl -n hw.ncpu)" \
+	--build-toolchain-only=1 \
+	--build-swift-static-stdlib=0 \
+	--build-swift-dynamic-stdlib=0 \
+	--build-swift-static-sdk-overlay=0 \
+	--build-swift-dynamic-sdk-overlay=0 \
+	--build-runtime-with-host-compiler=0 \
+	--skip-local-build \
+	--skip-local-host-install \
+	--skip-build-benchmarks \
+	--skip-build-clang-tools-extra \
+	--skip-build-android \
+	--skip-test-sourcekit \
+	--skip-test-swift \
+	--llvm-include-tests=0 \
+	--llvm-enable-modules=0 \
+	--skip-build-osx \
+	--skip-test-osx \
+	--skip-build-tvos \
+	--skip-test-tvos \
+	--skip-build-watchos \
+	--skip-test-watchos \
+	--build-swift-examples=0 \
+	--swift-include-tests=0 \
+	--darwin-deployment-version-ios=10.0 \
+	--darwin-crash-reporter-client=1 \
+	--reconfigure
+	cd ..
+# --extra-cmake-options="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++" \
 
 info "Merging toolchains"
 cp -a "swift-source/output/merged-hosts/usr/bin" usr/

@@ -7,12 +7,61 @@ on:
     branches: [ pr ]
 
 jobs:
-  build:
+  host-build:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@main
       - name: Prep work
-        id: prep_work
+        run: |
+          echo "[info] Checking out LLVM repo"
+          mkdir llvm-source && cd llvm-source
+          git clone --depth=1 --single-branch -b swift/release/5.5 https://github.com/apple/llvm-project/
+
+      - name: Build host
+        run: |
+          export DEVELOPER_DIR="/Applications/Xcode_13.0.app/Contents/Developer/"
+          echo "[info] Compiling host toolchain"
+          mkdir -p llvm-source/llvm-project/build/ $HOME/llvm-macosx-x86_64/
+          cd llvm-source/llvm-project/build/
+          cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS='clang' \
+            -DLLVM_LINK_LLVM_DYLIB=ON \
+            -DLLVM_ENABLE_Z3_SOLVER=OFF \
+            -DLLVM_ENABLE_BINDINGS=OFF \
+            -DLLVM_ENABLE_WARNINGS=OFF \
+            -DLLVM_TARGETS_TO_BUILD="X86;ARM;AArch64" \
+            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DCMAKE_INSTALL_PREFIX="$HOME/llvm-macosx-x86_64/" \
+            ../llvm
+          make -j$(sysctl -n hw.ncpu) install
+
+      - name: Prep host tc for artifact upload
+        run: |
+          cd $HOME
+          zip -9 -r llvm-macosx-x86_64.zip llvm-macosx-x86_64
+
+      - name: Upload host tc artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: llvm-macosx-x86_64-Container
+          path: ~/llvm-macosx-x86_64.zip
+
+  ios-build:
+    needs: host-build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@main
+      - name: Download artifact
+        uses: actions/download-artifact@main
+      - name: Extract host tc from artifact
+        run: |
+          set -x
+          for container in ./*Container; do
+            if [[ -d "$container" ]]; then
+              unzip $container/*.zip -d $HOME
+            fi
+          done
+
+      - name: The work
         run: |
           pip install --user six
           ./prepare-toolchain 5.5 /Applications/Xcode_13.0.app
@@ -26,7 +75,7 @@ jobs:
           path: packages/*.deb
 
   upload:
-    needs: build
+    needs: ios-build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
