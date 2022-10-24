@@ -58,7 +58,7 @@ fi
 mkdir swift-source
 cd swift-source
 git clone --depth=1 https://github.com/apple/swift.git
-swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE"
+swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE" -j "$(sysctl -n hw.ncpu)"
 
 # patch clang
 sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
@@ -74,7 +74,7 @@ swift/utils/build-script \
 --swift-install-components="compiler;clang-builtin-headers;editor-integration;tools;sourcekit-xpc-service;swift-remote-mirror;swift-remote-mirror-headers;" \
 --install-prefix=/usr \
 --cmake-generator=Ninja \
---extra-cmake-options="-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
+--extra-cmake-options="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
 --cross-compile-hosts=iphoneos-arm64 \
 --cross-compile-with-host-tools=0 \
 --compiler-vendor=apple \
@@ -82,13 +82,14 @@ swift/utils/build-script \
 --swift-primary-variant-arch=arm64 \
 --build-args="-j$(sysctl -n hw.ncpu)" \
 --swift-tools-num-parallel-lto-link-jobs="$(sysctl -n hw.ncpu)" \
+--llvm-ninja-targets-for-cross-compile-hosts="clang" \
 --build-toolchain-only=1 \
 --build-swift-static-stdlib=0 \
 --build-swift-dynamic-stdlib=0 \
 --build-swift-static-sdk-overlay=0 \
 --build-swift-dynamic-sdk-overlay=0 \
---build-runtime-with-host-compiler=0 \
---llvm-ninja-targets="llvm-tblgen libLLVMBitstreamReader.a libLLVMMCJIT.a clang" \
+--build-runtime-with-host-compiler=1 \
+--skip-local-build \
 --skip-local-host-install \
 --skip-build-benchmarks \
 --skip-build-clang-tools-extra \
@@ -102,7 +103,6 @@ swift/utils/build-script \
 --skip-build-watchos \
 --skip-test-watchos \
 --build-swift-examples=0 \
---build-swift-tools=0 \
 --swift-include-tests=0 \
 --llvm-include-tests=0 \
 --llvm-enable-modules=0 \
