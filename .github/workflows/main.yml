@@ -33,6 +33,8 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="$HOME/llvm-macosx-x86_64/" \
             ../llvm
           make -j$(sysctl -n hw.ncpu) install
+          # Doesn't copy over clang-tblgen by default??
+          cp -av bin/clang-tblgen $HOME/llvm-macosx-x86_64/bin/
 
       - name: Prep host tc for artifact upload
         run: |
