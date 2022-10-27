@@ -62,7 +62,7 @@ swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE" -j "$(sysct
 sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
 
 # for use with workflow
-if [[ -d $HOME/llvm-macosx-x86_64 ]]; then
+if [[ ! -z $CI && -d $HOME/llvm-macosx-x86_64 ]]; then
 	info "Installing pre-compiled host toolchain"
 	mkdir -p build/LLVMClangSwift_iphoneos/
 	mv -v $HOME/llvm-macosx-x86_64 build/LLVMClangSwift_iphoneos/
@@ -70,7 +70,7 @@ fi
 
 # compile swift
 info "Compiling Swift"
-swift/utils/build-script \
+ARGS=(
 	--build-subdir=LLVMClangSwift_iphoneos \
 	--release \
 	-- \
@@ -79,7 +79,7 @@ swift/utils/build-script \
 	--swift-install-components="compiler;clang-builtin-headers;editor-integration;tools;sourcekit-xpc-service;swift-remote-mirror;swift-remote-mirror-headers;" \
 	--install-prefix=/usr \
 	--cmake-generator=Ninja \
-	--extra-cmake-options="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
+	--extra-cmake-options="-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
 	--cross-compile-hosts=iphoneos-arm64 \
 	--compiler-vendor=apple \
 	--swift-primary-variant-sdk=IOS \
@@ -92,7 +92,6 @@ swift/utils/build-script \
 	--build-swift-static-sdk-overlay=0 \
 	--build-swift-dynamic-sdk-overlay=0 \
 	--build-runtime-with-host-compiler=0 \
-	--skip-local-build \
 	--skip-local-host-install \
 	--skip-build-benchmarks \
 	--skip-build-clang-tools-extra \
@@ -111,9 +110,14 @@ swift/utils/build-script \
 	--swift-include-tests=0 \
 	--darwin-deployment-version-ios=10.0 \
 	--darwin-crash-reporter-client=1 \
-	--reconfigure
-	cd ..
-# --extra-cmake-options="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++" \
+)
+if ! [[ -z $CI ]]; then
+	ARGS+=(
+		--skip-local-build \
+	)
+fi
+swift/utils/build-script "${ARGS[@]}" --reconfigure
+cd ..
 
 info "Merging toolchains"
 cp -a "swift-source/output/merged-hosts/usr/bin" usr/
