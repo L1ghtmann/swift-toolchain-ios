@@ -2,39 +2,85 @@ name: Build
 
 on:
   push:
-    branches: [ pr ]
+    branches: [ test ]
   pull_request:
-    branches: [ pr ]
+    branches: [ test ]
 
 jobs:
   host-build:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@main
-      - name: Prep work
-        run: |
-          echo "[info] Checking out LLVM repo"
-          mkdir llvm-source && cd llvm-source
-          git clone --depth=1 --single-branch -b swift/release/5.5 https://github.com/apple/llvm-project/
+      # - name: LLVM/Clang Prep work
+      #   run: |
+      #     echo "[info] Checking out LLVM repo"
+      #     mkdir llvm-source && cd llvm-source
+      #     git clone --depth=1 --single-branch -b swift/release/5.5 https://github.com/apple/llvm-project/
 
-      - name: Build host
+      # - name: Build LLVM/Clang for host
+      #   run: |
+      #     export DEVELOPER_DIR="/Applications/Xcode_13.0.app/Contents/Developer/"
+      #     echo "[info] Compiling host toolchain"
+      #     mkdir -p llvm-source/llvm-project/build/ $HOME/llvm-macosx-x86_64/
+      #     cd llvm-source/llvm-project/build/
+      #     cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS='clang' \
+      #       -DLLVM_LINK_LLVM_DYLIB=ON \
+      #       -DLLVM_ENABLE_Z3_SOLVER=OFF \
+      #       -DLLVM_ENABLE_BINDINGS=OFF \
+      #       -DLLVM_ENABLE_WARNINGS=OFF \
+      #       -DLLVM_TARGETS_TO_BUILD="X86;ARM;AArch64" \
+      #       -DCMAKE_BUILD_TYPE=MinSizeRel \
+      #       -DCMAKE_INSTALL_PREFIX="$HOME/llvm-macosx-x86_64/" \
+      #       ../llvm
+      #     make -j$(sysctl -n hw.ncpu) install
+      #     # Doesn't copy over clang-tblgen by default??
+      #     cp -av bin/clang-tblgen $HOME/llvm-macosx-x86_64/bin/
+
+      - name: Swift Compiler Prep work
+        run: |
+          brew install ninja
+          pip install --user six
+          echo "[info] Checking out Swift repo"
+          mkdir swift-source && cd swift-source
+          git clone --depth=1 https://github.com/apple/swift.git
+          swift/utils/update-checkout --clone --tag "swift-5.5-RELEASE" -j "$(sysctl -n hw.ncpu)"
+
+      - name: Build Swift Compiler for host
         run: |
           export DEVELOPER_DIR="/Applications/Xcode_13.0.app/Contents/Developer/"
-          echo "[info] Compiling host toolchain"
-          mkdir -p llvm-source/llvm-project/build/ $HOME/llvm-macosx-x86_64/
-          cd llvm-source/llvm-project/build/
-          cmake -G "Unix Makefiles" -DLLVM_ENABLE_PROJECTS='clang' \
-            -DLLVM_LINK_LLVM_DYLIB=ON \
-            -DLLVM_ENABLE_Z3_SOLVER=OFF \
-            -DLLVM_ENABLE_BINDINGS=OFF \
-            -DLLVM_ENABLE_WARNINGS=OFF \
-            -DLLVM_TARGETS_TO_BUILD="X86;ARM;AArch64" \
-            -DCMAKE_BUILD_TYPE=MinSizeRel \
-            -DCMAKE_INSTALL_PREFIX="$HOME/llvm-macosx-x86_64/" \
-            ../llvm
-          make -j$(sysctl -n hw.ncpu) install
-          # Doesn't copy over clang-tblgen by default??
-          cp -av bin/clang-tblgen $HOME/llvm-macosx-x86_64/bin/
+          export SKIP_XCODE_VERSION_CHECK=1
+          echo "[info] Compiling Swift"
+          cd swift-source
+          swift/utils/build-script \
+            --build-subdir=LLVMClangSwift_iphoneos \
+            --release \
+            -- \
+            --install-swift \
+            --install-destdir=output \
+            --swift-install-components="compiler" \
+            --install-prefix=/usr \
+            --cmake-generator=Ninja \
+            --extra-cmake-options="-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
+            --build-args="-j$(sysctl -n hw.ncpu)" \
+            --swift-tools-num-parallel-lto-link-jobs="$(sysctl -n hw.ncpu)" \
+            --build-llvm=0 \
+            --skip-build-benchmarks \
+            --skip-build-android \
+            --skip-test-sourcekit \
+            --skip-test-swift \
+            --skip-build-ios \
+            --skip-test-ios \
+            --skip-build-tvos \
+            --skip-test-tvos \
+            --skip-build-watchos \
+            --skip-test-watchos \
+            --build-swift-examples=0 \
+            --swift-include-tests=0 \
+            --reconfigure
+            echo "-----------------------output FILES--------------------------"
+            ls -A output/
+            echo "-----------------------LLVMClangSwift_iphoneos FILES--------------------------"
+            ls -A build/LLVMClangSwift_iphoneos/
 
       - name: Prep host tc for artifact upload
         run: |
