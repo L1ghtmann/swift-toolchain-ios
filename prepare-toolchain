@@ -62,10 +62,9 @@ swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE" -j "$(sysct
 sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
 
 # for use with workflow
-if [[ ! -z $CI && -d $HOME/llvm-macosx-x86_64 ]]; then
+if [[ ! -z $CI && -d $HOME/LLVMClangSwift_iphoneos ]]; then
 	info "Installing pre-compiled host toolchain"
-	mkdir -p build/LLVMClangSwift_iphoneos/
-	mv -v $HOME/llvm-macosx-x86_64 build/LLVMClangSwift_iphoneos/
+	mkdir -p build/ && mv -v $HOME/LLVMClangSwift_iphoneos build/
 fi
 
 # compile swift
