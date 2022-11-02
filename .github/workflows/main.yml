@@ -57,6 +57,7 @@ jobs:
             --release \
             -- \
             --install-swift \
+            --install-prefix=/usr \
             --swift-install-components="compiler" \
             --cmake-generator=Ninja \
             --extra-cmake-options="-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
