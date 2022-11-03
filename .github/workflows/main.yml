@@ -8,7 +8,7 @@ on:
 
 jobs:
   host-build:
-    runs-on: macos-latest
+    runs-on: macos-12
     steps:
       - uses: actions/checkout@main
       - name: Host tc prep work
@@ -18,14 +18,14 @@ jobs:
           echo "[info] Checking out Swift repo"
           mkdir swift-source && cd swift-source
           git clone --depth=1 https://github.com/apple/swift.git
-          swift/utils/update-checkout --clone --tag "swift-5.5-RELEASE" -j "$(sysctl -n hw.ncpu)"
+          swift/utils/update-checkout --clone --tag "swift-5.7-RELEASE" -j "$(sysctl -n hw.ncpu)"
 
       - name: Build Swift Compiler for host
         run: |
-          export DEVELOPER_DIR="/Applications/Xcode_13.0.app/Contents/Developer/"
+          export DEVELOPER_DIR="/Applications/Xcode_14.0.1.app/Contents/Developer/"
           export SKIP_XCODE_VERSION_CHECK=1
           echo "[info] Compiling host tc"
-          cd swift-source && mkdir -p build/LLVMClangSwift_iphoneos/
+          cd swift-source
           swift/utils/build-script \
             --build-subdir=LLVMClangSwift_iphoneos \
             --release \
@@ -54,9 +54,6 @@ jobs:
             --darwin-crash-reporter-client=1 \
             --reconfigure
           mv -v build/LLVMClangSwift_iphoneos/ $HOME
-          echo "----------------------START HOST-----------------------------"
-          ls -AR $HOME/LLVMClangSwift_iphoneos/
-          echo "----------------------END HOST-----------------------------"
 
       - name: Prep host tc for artifact upload
         run: |
@@ -88,7 +85,7 @@ jobs:
       - name: The work
         run: |
           pip install --user six
-          ./prepare-toolchain 5.5 /Applications/Xcode_13.0.app
+          ./prepare-toolchain 5.7 /Applications/Xcode_14.0.1.app
 
       - name: theos-build
         uses: L1ghtmann/theos-build@main
