@@ -18,11 +18,11 @@ jobs:
           echo "[info] Checking out Swift repo"
           mkdir swift-source && cd swift-source
           git clone --depth=1 https://github.com/apple/swift.git
-          swift/utils/update-checkout --clone --tag "swift-5.6.1-RELEASE" -j "$(sysctl -n hw.ncpu)"
+          swift/utils/update-checkout --clone --tag "swift-5.6-RELEASE" -j "$(sysctl -n hw.ncpu)"
 
       - name: Build Swift Compiler for host
         run: |
-          export DEVELOPER_DIR="/Applications/Xcode_13.4.1.app/Contents/Developer/"
+          export DEVELOPER_DIR="/Applications/Xcode_13.3.1.app/Contents/Developer/"
           export SKIP_XCODE_VERSION_CHECK=1
           echo "[info] Compiling host tc"
           cd swift-source
@@ -85,7 +85,7 @@ jobs:
         run: |
           export SKIP_XCODE_VERSION_CHECK=1
           pip install --user six
-          ./prepare-toolchain 5.6.1 /Applications/Xcode_13.4.1.app
+          ./prepare-toolchain 5.6 /Applications/Xcode_13.3.1.app
 
       - name: theos-build
         uses: L1ghtmann/theos-build@main
