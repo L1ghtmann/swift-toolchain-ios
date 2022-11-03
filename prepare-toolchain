@@ -10,7 +10,6 @@ if [[ $# -ne 2 ]]; then
 fi
 
 export DEVELOPER_DIR="$2/Contents/Developer/"
-export SKIP_XCODE_VERSION_CHECK=1
 
 info() { echo "[info] $1"; }
 
@@ -84,7 +83,6 @@ ARGS=(
 	--swift-primary-variant-sdk=IOS \
 	--swift-primary-variant-arch=arm64 \
 	--build-args="-j$(sysctl -n hw.ncpu)" \
-	--swift-tools-num-parallel-lto-link-jobs="$(sysctl -n hw.ncpu)" \
 	--build-toolchain-only=1 \
 	--build-swift-static-stdlib=0 \
 	--build-swift-dynamic-stdlib=0 \
