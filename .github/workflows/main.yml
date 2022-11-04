@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [ test ]
+    branches: [ test2 ]
   pull_request:
-    branches: [ test ]
+    branches: [ test2 ]
 
 jobs:
   host-build:
@@ -18,11 +18,11 @@ jobs:
           echo "[info] Checking out Swift repo"
           mkdir swift-source && cd swift-source
           git clone --depth=1 https://github.com/apple/swift.git
-          swift/utils/update-checkout --clone --tag "swift-5.5.2-RELEASE" -j "$(sysctl -n hw.ncpu)"
+          swift/utils/update-checkout --clone --tag "swift-5.5.1-RELEASE" -j "$(sysctl -n hw.ncpu)"
 
       - name: Build Swift Compiler for host
         run: |
-          export DEVELOPER_DIR="/Applications/Xcode_13.2.1.app/Contents/Developer/"
+          export DEVELOPER_DIR="/Applications/Xcode_13.1.app/Contents/Developer/"
           export SKIP_XCODE_VERSION_CHECK=1
           echo "[info] Compiling host tc"
           cd swift-source
@@ -85,7 +85,7 @@ jobs:
         run: |
           export SKIP_XCODE_VERSION_CHECK=1
           pip install --user six
-          ./prepare-toolchain 5.5.2 /Applications/Xcode_13.2.1.app
+          ./prepare-toolchain 5.5.1 /Applications/Xcode_13.1.app
 
       - name: theos-build
         uses: L1ghtmann/theos-build@main
