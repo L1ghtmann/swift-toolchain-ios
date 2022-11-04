@@ -116,16 +116,25 @@ fi
 swift/utils/build-script "${ARGS[@]}" --reconfigure
 cd ..
 
+echo "---------------------------------OUTPUT DIR START----------------------------"
+ls -A swift-source/output/
+echo "---------------------------------OUTPUT DIR END----------------------------"
+
 info "Merging toolchains"
-cp -a "swift-source/output/merged-hosts/usr/bin" usr/
-cp "swift-source/output/merged-hosts/usr/lib/libswiftDemangle.dylib" usr/lib/
+if [[ -z $CI ]]; then
+	cp -av "swift-source/output/merged-hosts/usr/bin" usr/
+	cp -v "swift-source/output/merged-hosts/usr/lib/libswiftDemangle.dylib" usr/lib/
+else
+	cp -av "swift-source/output/usr/bin" usr/
+	cp -v "swift-source/output/usr/lib/libswiftDemangle.dylib" usr/lib/
+fi
 cd usr/
 # Codesign any Mach-O files, also adding the correct entitlements
 find . \( -type f \( -name '*.dylib' -or \( -path './bin/*' -not -name '*.py' \) \) -or \( -path '*.framework/*' -not -name '*.*' \) -not -name '.DS_Store' \) -print0 | xargs -0 -I{} sh -c "ldid -S../../ent.xml {} || :"
 
 copy_file() {
 	mkdir -p share/swift_stash/"$(dirname "$1")"
-	mv "$1" share/swift_stash/"$(dirname "$1")"
+	mv -v "$1" share/swift_stash/"$(dirname "$1")"
 	ln -fs /usr/share/swift_stash/"$1" "$1"
 }
 
@@ -134,6 +143,6 @@ export -f copy_file
 find . -type f -print0 | xargs -0 -I{} sh -c 'copy_file {}'
 
 cd ..
-mv usr "usr-${version}"
+mv -v usr "usr-${version}"
 
 echo "${version}" > .version
