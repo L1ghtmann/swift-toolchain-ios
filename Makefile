@@ -7,7 +7,7 @@ override PACKAGE_VERSION := $(SWIFT_VERSION)-$(BUILD)
 include $(THEOS)/makefiles/common.mk
 include $(THEOS_MAKE_PATH)/null.mk
 
-_THEOS_CONTROL_FILE = $(_THEOS_ESCAPED_STAGING_DIR)/DEBIAN/control
+_THEOS_CONTROL_FILE = $(THEOS_STAGING_DIR)/DEBIAN/control
 SWIFT_VERSION_DEPENDS = org.swift.libswift (>= $(SWIFT_VERSION))
 
 ifeq ($(SWIFT_VERSION),)
