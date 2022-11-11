@@ -102,6 +102,7 @@ jobs:
         uses: actions/download-artifact@main
         with:
           name: package
+          path: ~/package
 
       - name: Create release
         id: create_release
@@ -120,7 +121,7 @@ jobs:
         run: |
           set -x
           debs=()
-          for deb in **/*.deb; do
+          for deb in ~/**/*.deb; do
             debs+=("-a" "$deb")
           done
           hub release edit "${debs[@]}" -m "Trial 3" "0.0.3"
