@@ -36,6 +36,7 @@ jobs:
             --cmake-generator=Ninja \
             --extra-cmake-options="-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
             --build-args="-j$(sysctl -n hw.ncpu)" \
+            --lldb \
             --skip-build-benchmarks \
             --skip-build-clang-tools-extra \
             --skip-build-android \
