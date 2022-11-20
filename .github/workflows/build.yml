@@ -20,10 +20,12 @@ jobs:
 
       - name: Build Swift Compiler For Host
         run: |
+          echo "[info] Patching hardcoded lldb deployment version"
+          cd swift-source
+          sed -i '' "s@10.11@$(sw_vers -productVersion)@g" llvm-project/lldb/cmake/caches/Apple-lldb-macOS.cmake
           export DEVELOPER_DIR="/Applications/Xcode_13.1.app/Contents/Developer/"
           export SKIP_XCODE_VERSION_CHECK=1
           echo "[info] Compiling host tc"
-          cd swift-source
           swift/utils/build-script \
             --build-subdir=LLVMClangSwift_iphoneos \
             --release \
