@@ -1,9 +1,8 @@
 name: Build
 
 on:
-  push:
-    tags:
-    - '*'
+  - push
+  - workflow_dispatch
 
 jobs:
   host-build:
