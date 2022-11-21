@@ -83,10 +83,15 @@ jobs:
             fi
           done
 
+      - name: iOS Toolchain Prep
+        run: |
+          brew install libedit
+          brew link --force libedit
+          pip install --user six
+
       - name: The Work
         run: |
           export SKIP_XCODE_VERSION_CHECK=1
-          pip install --user six
           ./prepare-toolchain 5.5.1 /Applications/Xcode_13.1.app
 
       - name: Build Deb
