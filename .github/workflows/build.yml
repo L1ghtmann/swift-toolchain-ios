@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@main
       - name: Host Toolchain Prep
         run: |
-          brew install ninja
+          brew install cmake ninja
           pip install --user six
           echo "[info] Checking out Swift repo"
           mkdir swift-source && cd swift-source
@@ -85,7 +85,7 @@ jobs:
 
       - name: iOS Toolchain Prep
         run: |
-          brew uninstall pkg-config
+          brew install cmake ninja swig
           pip install --user six
 
       - name: The Work
