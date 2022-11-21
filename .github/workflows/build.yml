@@ -85,8 +85,7 @@ jobs:
 
       - name: iOS Toolchain Prep
         run: |
-          brew install libedit
-          brew link --force libedit
+          brew uninstall pkg-config
           pip install --user six
 
       - name: The Work
