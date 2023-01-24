@@ -1,11 +1,8 @@
 name: Build
 
 on:
-  - push
-  - workflow_dispatch
-
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  push:
+  workflow_dispatch:
 
 jobs:
   host-build:
@@ -18,7 +15,7 @@ jobs:
           echo "[info] Checking out Swift repo"
           mkdir swift-source && cd swift-source
           git clone --depth=1 https://github.com/apple/swift.git
-          swift/utils/update-checkout --clone --tag "swift-5.7.2-RELEASE" -j "$(sysctl -n hw.ncpu)"
+          swift/utils/update-checkout --clone --tag "swift-5.7.3-RELEASE" -j "$(sysctl -n hw.ncpu)"
 
       - name: Build Swift Compiler For Host
         run: |
@@ -39,7 +36,6 @@ jobs:
             --cmake-generator=Ninja \
             --extra-cmake-options="-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
             --build-args="-j$(sysctl -n hw.ncpu)" \
-            --lldb \
             --skip-build-benchmarks \
             --skip-build-clang-tools-extra \
             --skip-build-android \
@@ -69,49 +65,45 @@ jobs:
       - name: Upload Host Toolchain Artifact
         uses: actions/upload-artifact@main
         with:
-          name: LLVMClangSwift_iphoneos-Container
+          name: LLVMClangSwift_iphoneos
           path: ~/LLVMClangSwift_iphoneos.zip
 
   ios-build:
     needs: host-build
     runs-on: macos-12
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - uses: actions/checkout@main
       - name: Download Artifact
         uses: actions/download-artifact@main
+        with:
+          name: LLVMClangSwift_iphoneos
 
-      - name: Extract host tc from artifact
+      - name: Extract Host Toolchain
         run: |
-          set -x
-          for container in ./*Container; do
-            if [[ -d "$container" ]]; then
-              unzip $container/*.zip -d $HOME
-            fi
-          done
-
-      - uses: actions/checkout@main
+          unzip LLVMClangSwift_iphoneos.zip -d $HOME
 
       - name: The Work
         run: |
           export SKIP_XCODE_VERSION_CHECK=1
           brew install ninja
           pip install --user six
-          ./prepare-toolchain 5.7.2 /Applications/Xcode_14.2.app
+          ./prepare-toolchain 5.7.3 /Applications/Xcode_14.2.app
+
+      - name: Set up Theos
+        run: |
+          brew install ldid make xz
+          git clone --recursive https://github.com/theos/theos.git ~/theos
 
       - name: Build Deb
-        uses: L1ghtmann/theos-build@main
-        with:
-          extra_args: "FINALPACKAGE=1"
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Draft Release
-          body: ''
-          draft: true
+        run: |
+          export THEOS=~/theos
+          gmake clean package FINALPACKAGE=1
 
       - name: Attach Deb To Release
         run: |
           set -x
-          gh release upload ${GITHUB_REF##*/} packages/*.deb
+          TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
+          gh release create "$TAG" --draft --title "Draft Release"
+          gh release upload "$TAG" packages/*.deb

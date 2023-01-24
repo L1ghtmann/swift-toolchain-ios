@@ -83,7 +83,6 @@ ARGS=(
 	--swift-primary-variant-sdk=IOS \
 	--swift-primary-variant-arch=arm64 \
 	--build-args="-j$(sysctl -n hw.ncpu)" \
-	--lldb \
 	--build-toolchain-only=1 \
 	--build-swift-static-stdlib=0 \
 	--build-swift-dynamic-stdlib=0 \
