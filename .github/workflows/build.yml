@@ -15,7 +15,7 @@ jobs:
           echo "[info] Checking out Swift repo"
           mkdir swift-source && cd swift-source
           git clone --depth=1 https://github.com/apple/swift.git
-          swift/utils/update-checkout --clone --tag "swift-5.7.3-RELEASE" -j "$(sysctl -n hw.ncpu)"
+          swift/utils/update-checkout --clone --tag "swift-5.7.2-RELEASE" -j "$(sysctl -n hw.ncpu)"
 
       - name: Build Swift Compiler For Host
         run: |
@@ -89,7 +89,7 @@ jobs:
           export SKIP_XCODE_VERSION_CHECK=1
           brew install ninja
           pip install --user six
-          ./prepare-toolchain 5.7.3 /Applications/Xcode_14.2.app
+          ./prepare-toolchain 5.7.2 /Applications/Xcode_14.2.app
 
       - name: Set up Theos
         run: |
