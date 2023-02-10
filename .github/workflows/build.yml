@@ -17,7 +17,7 @@ jobs:
           git clone --depth=1 https://github.com/apple/swift.git
           swift/utils/update-checkout --clone --tag "swift-5.5.1-RELEASE" -j "$(sysctl -n hw.ncpu)"
           cd llvm-project
-          git cherry-pick b1aed14
+          git cherry-pick b1aed14 --strategy-option theirs
 
       - name: Build Swift Compiler For Host
         run: |

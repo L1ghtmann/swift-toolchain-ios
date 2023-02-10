@@ -59,7 +59,7 @@ swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE" -j "$(sysct
 
 # patch llvm/clang
 cd llvm-project
-git cherry-pick b1aed14
+git cherry-pick b1aed14 --strategy-option theirs
 sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
 cd ../
 
