@@ -80,7 +80,7 @@ cd ../
 
 git clone --depth=1 https://github.com/procursusteam/ldid
 cd ldid
-make -j$(nproc --all) PREFIX="" install
+sudo make -j$(nproc --all) PREFIX="" install
 cd ../
 
 info "Checking out Swift repo"

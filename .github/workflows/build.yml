@@ -14,6 +14,7 @@ jobs:
           pushd xar/xar/
           sed -i 's@OpenSSL_add_all_ciphers@OPENSSL_init_crypto@' configure.ac
           ./autogen.sh
+          make -j$(nproc --all) install
           sudo make -j$(nproc --all) install
           popd
           sudo apt install -y libarchive-tools
