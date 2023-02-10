@@ -57,8 +57,11 @@ cd swift-source
 git clone --depth=1 https://github.com/apple/swift.git
 swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE" -j "$(sysctl -n hw.ncpu)"
 
-# patch clang
-sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
+# patch llvm/clang
+cd llvm-project
+git cherry-pick b1aed14
+sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
+cd ../
 
 # for use with workflow
 if [[ ! -z $CI && -d $HOME/LLVMClangSwift_iphoneos ]]; then
@@ -84,6 +87,8 @@ ARGS=(
 	--swift-primary-variant-arch=arm64 \
 	--build-args="-j$(sysctl -n hw.ncpu)" \
 	--build-toolchain-only=1 \
+	--lldb \
+	--infer \
 	--build-swift-static-stdlib=0 \
 	--build-swift-dynamic-stdlib=0 \
 	--build-swift-static-sdk-overlay=0 \

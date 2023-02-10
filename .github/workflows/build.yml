@@ -16,6 +16,8 @@ jobs:
           mkdir swift-source && cd swift-source
           git clone --depth=1 https://github.com/apple/swift.git
           swift/utils/update-checkout --clone --tag "swift-5.5.1-RELEASE" -j "$(sysctl -n hw.ncpu)"
+          cd llvm-project
+          git cherry-pick b1aed14
 
       - name: Build Swift Compiler For Host
         run: |
@@ -34,6 +36,8 @@ jobs:
             --cmake-generator=Ninja \
             --extra-cmake-options="-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
             --build-args="-j$(sysctl -n hw.ncpu)" \
+            --lldb \
+            --infer \
             --skip-build-benchmarks \
             --skip-build-clang-tools-extra \
             --skip-build-android \
