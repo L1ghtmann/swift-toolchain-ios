@@ -37,10 +37,12 @@ for file in libswift*.dylib; do
 	# symlink to the libswift package
 	ln -fs "/usr/lib/libswift/${version}/${file}" "${file}"
 done
-cd
+cd ../../../
 
 info "Installing dependencies"
 sudo apt update && sudo apt install -y \
+	autoconf 			  \
+	automake 			  \
 	build-essential       \
 	clang                 \
 	cmake                 \
@@ -50,10 +52,12 @@ sudo apt update && sudo apt install -y \
 	libedit-dev           \
 	libicu-dev            \
 	libncurses5-dev       \
-	libplist-dev 		  \
 	libpython3-dev        \
+	libssl-dev			  \
 	libsqlite3-dev        \
+	libtool 			  \
 	libxml2-dev           \
+	make 				  \
 	ninja-build           \
 	pkg-config            \
 	python2               \
@@ -65,40 +69,40 @@ sudo apt update && sudo apt install -y \
 	swig                  \
 	systemtap-sdt-dev     \
 	tzdata                \
-	unzip                 \
-	uuid-dev
+	uuid-dev              \
+	zip
 
-cd /usr/lib/x86_64-linux-gnu/pkgconfig/
-# idk why this isn't 2.0 for the runner, but whatever
-sudo ln -s libplist.pc libplist-2.0.pc
-cd
-
-git clone https://github.com/procursusteam/ldid
-cd ldid
+git clone --depth=1 https://github.com/libimobiledevice/libplist
+cd libplist
+./autogen.sh --without-cython
 sudo make -j$(nproc --all) install
-cd
+cd ../
+
+git clone --depth=1 https://github.com/procursusteam/ldid
+cd ldid
+make -j$(nproc --all) PREFIX="" install
+cd ../
 
 info "Checking out Swift repo"
-
 if [[ -d swift-source ]]; then
 	rm -rf swift-source
 fi
 
 mkdir swift-source
 cd swift-source
-git clone --depth=1 https://github.com/apple/swift.git
-swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE"
+git clone --depth=1 https://github.com/apple/swift
+cd swift
+git remote add upstream https://github.com/L1ghtmann/swift/
+git fetch upstream
+git cherry-pick 990e77a8336237a2ff98736720cc98def7c055c7 --strategy-option theirs
+cd ../
+swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE" -j "$(nproc --all)"
 
 # patch clang
 sed -ie 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
 
 # compile swift
 info "Compiling Swift"
-# --darwin-deployment-version-ios=10.0 isn't being read by llvm for some reason and it's defaulting to ios 7
-# threading support wasn't added until ios 9, so obv llvm is failing to build w/ threading enabled by default
-# going to hackily patch the default ios 7 and hope this changes something? (Leptos >>)
-# sed -i 's@7.0@10.0@' swift/utils/build-script-impl
-
 swift/utils/build-script \
 	--build-subdir=LLVMClangSwift_iphoneos \
 	--release \
@@ -107,36 +111,35 @@ swift/utils/build-script \
 	--install-destdir=output \
 	--swift-install-components="compiler;clang-builtin-headers;editor-integration;tools;sourcekit-xpc-service;swift-remote-mirror;swift-remote-mirror-headers;" \
 	--install-prefix=/usr \
+	--cmake-generator=Ninja \
+	--extra-cmake-options="-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64" \
 	--cross-compile-hosts=iphoneos-arm64 \
 	--compiler-vendor=apple \
 	--swift-primary-variant-sdk=IOS \
 	--swift-primary-variant-arch=arm64 \
-	--build-args=-j$(nproc --all)
-	--swift-tools-num-parallel-lto-link-jobs=$(nproc --all)
-	--skip-build-osx \
-	--skip-test-osx \
-	--skip-build-tvos \
-	--skip-test-tvos \
-	--skip-build-watchos \
-	--skip-test-watchos \
-	--build-toolchain-only=1 \
+	--build-args="-j$(nrpco --all)" \
 	--build-swift-static-stdlib=0 \
 	--build-swift-dynamic-stdlib=0 \
 	--build-swift-static-sdk-overlay=0 \
 	--build-swift-dynamic-sdk-overlay=0 \
 	--build-runtime-with-host-compiler=0 \
-	--skip-local-host-install \
 	--skip-build-benchmarks \
+	--skip-build-clang-tools-extra \
+	--skip-build-android \
 	--skip-test-sourcekit \
 	--skip-test-swift \
 	--llvm-include-tests=0 \
 	--llvm-enable-modules=0 \
+	--skip-build-tvos \
+	--skip-test-tvos \
+	--skip-build-watchos \
+	--skip-test-watchos \
 	--build-swift-examples=0 \
 	--swift-include-tests=0 \
 	--darwin-deployment-version-ios=10.0 \
 	--darwin-crash-reporter-client=1 \
 	--reconfigure
-cd ..
+cd ../
 
 info "Merging toolchains"
 cp -a "swift-source/output/merged-hosts/usr/bin" usr/
@@ -146,9 +149,11 @@ cd usr/
 find . \( -type f \( -name '*.dylib' -or \( -path './bin/*' -not -name '*.py' \) \) -or \( -path '*.framework/*' -not -name '*.*' \) -not -name '.DS_Store' \) -print0 | xargs -0 -I{} sh -c "ldid -S../../ent.xml {} || :"
 
 copy_file() {
-	mkdir -p share/swift_stash/"$(dirname "$1")"
-	mv "$1" share/swift_stash/"$(dirname "$1")"
-	ln -fs /usr/share/swift_stash/"$1" "$1"
+	# Remove "./" from the file path
+	file="$(echo $1 | cut -c 3-)"
+	mkdir -p share/swift_stash/"$(dirname "$file")"
+	mv -v "$file" share/swift_stash/"$(dirname "$file")"
+	ln -fs /usr/share/swift_stash/"$file" "$file"
 }
 
 export -f copy_file

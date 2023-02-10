@@ -1,0 +1,32 @@
+name: Build
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@main
+      - name: The work
+        run: |
+          git clone --depth=1 https://github.com/mackyle/xar
+          pushd xar/xar/
+          sed -i 's@OpenSSL_add_all_ciphers@OPENSSL_init_crypto@' configure.ac
+          ./autogen.sh
+          sudo make -j$(nproc --all) install
+          popd
+          sudo apt install -y libarchive-tools
+          ./prepare-toolchain 5.7.2
+
+      - name: Build package
+        uses: L1ghtmann/theos-build@main
+        with:
+          extra_args: "FINALPACKAGE=1"
+
+      - name: Attach Deb To Release
+        run: |
+          set -x
+          TAG="${GITHUB_REF##*/}-${GITHUB_SHA:0:7}"
+          gh release create "$TAG" --draft --title "Draft Release"
+          gh release upload "$TAG" packages/*.deb
