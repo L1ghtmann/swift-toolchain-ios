@@ -14,7 +14,7 @@ jobs:
           pip install --user six
           echo "[info] Checking out Swift repo"
           mkdir swift-source && cd swift-source
-          git clone --depth=1 https://github.com/apple/swift.git
+          git clone --depth=1 https://github.com/L1ghtmann/swift
           swift/utils/update-checkout --clone --tag "swift-5.7.2-RELEASE" -j "$(sysctl -n hw.ncpu)"
 
       - name: Build Swift Compiler For Host
