@@ -25,8 +25,8 @@ fi
 info "Unpacking toolchain"
 # remove any pre-existing usr dir first
 rm -rf usr
-xar -xvf "toolchain-${version}.pkg" "${package}/Payload"
-bsdtar -xzvf "${package}/Payload" "usr"
+bsdtar -xvf "toolchain-${version}.pkg" "${package}/Payload"
+bsdtar -xvf "${package}/Payload" "usr"
 rm -rf "${package}"
 
 info "Modifying macOS toolchain"

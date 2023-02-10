@@ -10,13 +10,6 @@ jobs:
       - uses: actions/checkout@main
       - name: The work
         run: |
-          git clone --depth=1 https://github.com/mackyle/xar
-          pushd xar/xar/
-          sed -i 's@OpenSSL_add_all_ciphers@OPENSSL_init_crypto@' configure.ac
-          ./autogen.sh
-          make -j$(nproc --all) install
-          sudo make -j$(nproc --all) install
-          popd
           sudo apt install -y libarchive-tools
           ./prepare-toolchain 5.7.2
 
