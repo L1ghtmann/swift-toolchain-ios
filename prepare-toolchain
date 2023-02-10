@@ -59,7 +59,8 @@ cd swift
 git remote add upstream https://github.com/L1ghtmann/swift/
 git fetch upstream
 git cherry-pick 990e77a8336237a2ff98736720cc98def7c055c7 --strategy-option theirs
-utils/update-checkout --clone --tag "swift-${version}-RELEASE" -j "$(sysctl -n hw.ncpu)"
+cd ../
+swift/utils/update-checkout --clone --tag "swift-${version}-RELEASE" -j "$(sysctl -n hw.ncpu)"
 
 # patch clang
 sed -i '' -e 's;__has_include(<CoreServices/CoreServices.h>);__has_include(<FSEvents/FSEvents.h>);g' llvm-project/clang/lib/DirectoryWatcher/mac/DirectoryWatcher-mac.cpp
