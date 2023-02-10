@@ -37,7 +37,7 @@ for file in libswift*.dylib; do
 	# symlink to the libswift package
 	ln -fs "/usr/lib/libswift/${version}/${file}" "${file}"
 done
-cd ../../../
+cd ../../../../
 
 info "Installing dependencies"
 sudo apt update && sudo apt install -y \
